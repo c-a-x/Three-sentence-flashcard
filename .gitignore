@@ -1,2 +1,4 @@
 node_modules
 三句记忆卡-项目规划.md
+.vercel
+.env*.local

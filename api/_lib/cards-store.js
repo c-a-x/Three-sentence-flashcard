@@ -1,4 +1,4 @@
-import { existsSync, promises as fs } from 'node:fs';
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createClient } from 'redis';
@@ -6,7 +6,6 @@ import { createClient } from 'redis';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.join(__dirname, '..', '..');
-const legacyJsonFile = path.join(repoRoot, 'server', 'data', 'cards.json');
 const localDataDir = path.join(repoRoot, '.data');
 const localDataFile = path.join(localDataDir, 'cards.json');
 const storeKey = 'three-sentence-flashcard:cards';
@@ -124,23 +123,11 @@ function serializeCard(card) {
   };
 }
 
-function hasKv() {
+function hasRedis() {
   return Boolean(getRedisUrl());
 }
 
 async function loadSeedCards() {
-  if (existsSync(legacyJsonFile)) {
-    try {
-      const content = await fs.readFile(legacyJsonFile, 'utf8');
-      const cards = JSON.parse(content);
-      if (Array.isArray(cards) && cards.length > 0) {
-        return cards.map(normalizeCard);
-      }
-    } catch {
-      // Fall back to bundled seed cards.
-    }
-  }
-
   return seedCards.map(normalizeCard);
 }
 
@@ -160,7 +147,7 @@ async function writeLocalCards(cards) {
 }
 
 async function readStoredCards() {
-  if (hasKv()) {
+  if (hasRedis()) {
     const redis = await getRedisClient();
     const storedValue = await redis.get(storeKey);
     const cards = typeof storedValue === 'string' ? JSON.parse(storedValue) : storedValue;
@@ -188,7 +175,7 @@ async function readStoredCards() {
 async function saveCards(cards) {
   const normalizedCards = cards.map(normalizeCard);
 
-  if (hasKv()) {
+  if (hasRedis()) {
     const redis = await getRedisClient();
     await redis.set(storeKey, JSON.stringify(normalizedCards.map(serializeCard)));
     return normalizedCards;
