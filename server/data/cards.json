@@ -1,0 +1,33 @@
+[
+  {
+    "id": "500b43f5-8afa-4057-89dd-5fb79410bb69",
+    "title": "1",
+    "sentence1": "1",
+    "sentence2": "1",
+    "sentence3": "1",
+    "tags": [
+      "1"
+    ],
+    "sourceType": "生活",
+    "importance": 3,
+    "createdAt": "2026-05-15T15:22:03.587Z",
+    "updatedAt": "2026-05-15T15:22:03.592Z"
+  },
+  {
+    "id": "seed-3",
+    "title": "三句话记法更稳",
+    "sentence1": "今天复习知识点时，我试着用三句话概括一页笔记。",
+    "sentence2": "相比长段落，这种方式让我更容易记住关键结论。",
+    "sentence3": "后面可以把每次复习都压缩成一张卡。",
+    "tags": [
+      "学习",
+      "总结",
+      "方法"
+    ],
+    "sourceType": "学习",
+    "importance": 3,
+    "createdAt": "2026-05-13T12:00:00.000Z",
+    "updatedAt": "2026-05-15T15:21:51.896Z",
+    "reviewedAt": "2026-05-15T15:21:44.660Z"
+  }
+]
