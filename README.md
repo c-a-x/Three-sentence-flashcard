@@ -67,9 +67,26 @@
 │  ├─ storage.ts
 │  ├─ styles.css
 │  └─ types.ts
-├─ vercel.json
 └─ README.md
 ```
+
+## Vercel 部署
+
+这个项目适合部署成一个 Vercel 项目，前端和 API 都在同一个平台上。
+
+### 最短部署清单
+
+1. 在 Vercel 创建一个新项目。
+2. 导入这个仓库。
+3. 保持默认框架识别，让 Vercel 自动部署前端和 `api/` 下的 Serverless Functions。
+4. 在同一个项目里绑定 Vercel KV。
+5. 部署完成后，直接打开 Vercel 分配的站点地址。
+
+### 需要确认的配置
+
+- 前端通过相对路径 `/api` 调用后端，不需要额外配置跨域。
+- 生产环境必须绑定 Vercel KV，否则只会退回本地 JSON 备份模式。
+- 本地开发不需要单独启动后端进程。
 
 ## 本地运行
 
@@ -79,50 +96,25 @@
 npm install
 ```
 
-### 2. 启动后端
+### 2. 启动开发模式
 
 ```bash
 npm run dev
 ```
 
-开发环境里，Vite 会同时提供前端和 `/api` 的本地模拟实现，方便直接调试。
+开发模式会同时提供前端页面和本地 `/api` 模拟接口，默认访问地址是 `http://localhost:5173`。
 
-### 3. 启动前端
-
-```bash
-npm run dev -- --host 0.0.0.0
-```
-
-默认访问地址：`http://localhost:5173`
-
-### 4. 打包构建
+### 3. 打包构建
 
 ```bash
 npm run build
 ```
 
-## Vercel 部署
-
-这个项目适合部署成一个 Vercel 项目，前端和 API 都在同一个平台上。
-
-### 方式一：使用仓库直接导入 Vercel
-
-1. 在 Vercel 创建一个新项目。
-2. 导入这个仓库。
-3. 保持默认的框架识别，让 Vercel 构建 `dist` 静态前端并部署 `api/` 目录下的函数。
-4. 在同一个 Vercel 项目里添加 Vercel KV。
-
-### 方式二：补充环境变量
-
-- 如果你在本地调试，可以直接运行 `npm run dev`。
-- 生产环境需要在 Vercel 项目里绑定 Vercel KV，这样卡片数据才会持久化。
-- 如果不绑定 Vercel KV，应用会退回到本地 JSON 备份模式，适合开发，不适合生产。
-
 ### 说明
 
 - 前端通过相对路径 `/api` 调用后端，所以部署到 Vercel 后不需要额外配置跨域。
 - 旧的 Express / SQLite 方案已经被 Serverless API 方案替换。
-- 本地开发时不需要单独启动后端进程。
+- 生产环境数据保存在 Vercel KV，开发环境则使用本地 JSON 回退。
 
 ## REST 接口
 
