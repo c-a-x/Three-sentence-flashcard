@@ -1,7 +1,7 @@
-import { kv } from '@vercel/kv';
 import { existsSync, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createClient } from 'redis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +10,31 @@ const legacyJsonFile = path.join(repoRoot, 'server', 'data', 'cards.json');
 const localDataDir = path.join(repoRoot, '.data');
 const localDataFile = path.join(localDataDir, 'cards.json');
 const storeKey = 'three-sentence-flashcard:cards';
+
+let redisClientPromise = null;
+
+function getRedisUrl() {
+  return process.env.REDIS_URL ?? null;
+}
+
+async function getRedisClient() {
+  const redisUrl = getRedisUrl();
+
+  if (!redisUrl) {
+    return null;
+  }
+
+  if (!redisClientPromise) {
+    redisClientPromise = (async () => {
+      const client = createClient({ url: redisUrl });
+      client.on('error', () => {});
+      await client.connect();
+      return client;
+    })();
+  }
+
+  return redisClientPromise;
+}
 
 const seedCards = [
   {
@@ -100,7 +125,7 @@ function serializeCard(card) {
 }
 
 function hasKv() {
-  return Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+  return Boolean(getRedisUrl());
 }
 
 async function loadSeedCards() {
@@ -136,14 +161,16 @@ async function writeLocalCards(cards) {
 
 async function readStoredCards() {
   if (hasKv()) {
-    const cards = await kv.get(storeKey);
+    const redis = await getRedisClient();
+    const storedValue = await redis.get(storeKey);
+    const cards = typeof storedValue === 'string' ? JSON.parse(storedValue) : storedValue;
 
     if (Array.isArray(cards) && cards.length > 0) {
       return cards.map(normalizeCard);
     }
 
     const seedCardsList = await loadSeedCards();
-    await kv.set(storeKey, seedCardsList.map(serializeCard));
+    await redis.set(storeKey, JSON.stringify(seedCardsList.map(serializeCard)));
     return seedCardsList;
   }
 
@@ -162,7 +189,8 @@ async function saveCards(cards) {
   const normalizedCards = cards.map(normalizeCard);
 
   if (hasKv()) {
-    await kv.set(storeKey, normalizedCards.map(serializeCard));
+    const redis = await getRedisClient();
+    await redis.set(storeKey, JSON.stringify(normalizedCards.map(serializeCard)));
     return normalizedCards;
   }
 

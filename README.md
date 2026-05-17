@@ -5,7 +5,7 @@
 ## 项目特点
 
 - 三句话记录：每张卡固定为三句，降低记录成本。
-- 持久化存储：Vercel 生产环境使用 Vercel KV 保存数据，关闭后重新打开数据仍然保留。
+- 持久化存储：Vercel 生产环境使用 Marketplace Redis 保存数据，关闭后重新打开数据仍然保留。
 - 快速回顾：支持搜索、筛选、随机回顾、标记已回顾。
 - 个人优先：不包含登录、多用户、远程同步和权限控制。
 
@@ -24,17 +24,17 @@
 
 - Node.js 22
 - Vercel Serverless Functions
-- Vercel KV
+- Upstash Redis
 
 后端提供 REST 接口，负责卡片的增删改查和已回顾状态更新。
 
 ### 数据存储
 
-- Vercel KV：生产环境持久化存储
+- Upstash Redis：生产环境持久化存储
 - 本地开发回退文件：`.data/cards.json`
 - 迁移遗留文件：`server/data/cards.json`
 
-当前主存储是 Vercel KV，`cards.json` 用于首次迁移和本地回退。
+当前主存储是 Upstash Redis，`cards.json` 用于首次迁移和本地回退。
 
 ## 功能说明
 
@@ -79,13 +79,13 @@
 1. 在 Vercel 创建一个新项目。
 2. 导入这个仓库。
 3. 保持默认框架识别，让 Vercel 自动部署前端和 `api/` 下的 Serverless Functions。
-4. 在同一个项目里绑定 Vercel KV。
+4. 在同一个项目里绑定 Vercel Marketplace 的 Redis 集成。
 5. 部署完成后，直接打开 Vercel 分配的站点地址。
 
 ### 需要确认的配置
 
 - 前端通过相对路径 `/api` 调用后端，不需要额外配置跨域。
-- 生产环境必须绑定 Vercel KV，否则只会退回本地 JSON 备份模式。
+- 生产环境必须绑定 Marketplace Redis，否则只会退回本地 JSON 备份模式。
 - 本地开发不需要单独启动后端进程。
 
 ## 本地运行
@@ -114,7 +114,7 @@ npm run build
 
 - 前端通过相对路径 `/api` 调用后端，所以部署到 Vercel 后不需要额外配置跨域。
 - 旧的 Express / SQLite 方案已经被 Serverless API 方案替换。
-- 生产环境数据保存在 Vercel KV，开发环境则使用本地 JSON 回退。
+- 生产环境数据保存在 Upstash Redis，开发环境则使用本地 JSON 回退。
 
 ## REST 接口
 
@@ -131,7 +131,7 @@ npm run build
 
 项目在 Vercel 上通过 KV 保存卡片数据，重启和重新部署后仍然保留。
 
-如果你想备份数据，可以从 Vercel KV 导出当前卡片列表；本地开发时也可以直接复制 `.data/cards.json`。
+如果你想备份数据，可以从 Upstash Redis 导出当前卡片列表；本地开发时也可以直接复制 `.data/cards.json`。
 
 ## 后续可扩展方向
 
