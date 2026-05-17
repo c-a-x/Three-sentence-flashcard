@@ -96,6 +96,32 @@ npm run dev -- --host 0.0.0.0
 npm run build
 ```
 
+## Render 部署
+
+这个项目适合部署成一个 Render Web Service，由同一个 Node 服务同时提供 API 和前端静态资源。
+
+### 方式一：使用仓库里的 `render.yaml`
+
+1. 在 Render 创建一个新的 Blueprint。
+2. 连接这个仓库。
+3. 使用根目录的 `render.yaml`。
+4. 部署后访问 Render 分配的站点地址。
+
+这个配置会把 SQLite 数据库放到 Render 挂载的持久化盘里，路径是 `/var/data/cards.db`。
+
+### 方式二：在 Render 控制台手动创建 Web Service
+
+- Build Command: `npm install && npm run build`
+- Start Command: `npm start`
+- Environment: `NODE_VERSION=22`
+- Environment: `DB_FILE=/var/data/cards.db`
+- 挂载一个 Persistent Disk 到 `/var/data`
+
+### 说明
+
+- 前端默认会通过同源的 `/api` 请求访问后端，Render 上不需要单独配置 API 域名。
+- 本地开发时，Vite 会把 `/api` 代理到 `http://localhost:3001`。
+
 ## REST 接口
 
 后端当前提供这些接口：

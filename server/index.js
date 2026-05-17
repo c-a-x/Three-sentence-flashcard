@@ -7,9 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dataDir = path.join(__dirname, 'data');
-const dataFile = path.join(dataDir, 'cards.db');
-const legacyJsonFile = path.join(dataDir, 'cards.json');
+const sourceDataDir = path.join(__dirname, 'data');
+const dataFile = process.env.DB_FILE ?? path.join(sourceDataDir, 'cards.db');
+const dataDir = path.dirname(dataFile);
+const legacyJsonFile = path.join(sourceDataDir, 'cards.json');
+const clientDistDir = path.join(__dirname, '..', 'dist');
+const clientIndexFile = path.join(clientDistDir, 'index.html');
 const port = Number(process.env.PORT ?? 3001);
 
 const seedCards = [
@@ -342,6 +345,24 @@ app.delete('/api/cards/:id', async (request, response) => {
     response.status(500).json({ message: '删除卡片失败', error: String(error) });
   }
 });
+
+if (existsSync(clientDistDir)) {
+  app.use(express.static(clientDistDir, { index: false }));
+
+  app.get('*', (request, response, next) => {
+    if (request.path.startsWith('/api/')) {
+      next();
+      return;
+    }
+
+    if (existsSync(clientIndexFile)) {
+      response.sendFile(clientIndexFile);
+      return;
+    }
+
+    next();
+  });
+}
 
 app.listen(port, () => {
   console.log(`三句记忆卡 API running on http://localhost:${port}`);
