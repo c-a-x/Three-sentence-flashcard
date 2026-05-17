@@ -5,7 +5,7 @@
 ## 项目特点
 
 - 三句话记录：每张卡固定为三句，降低记录成本。
-- 本地持久化：使用 SQLite 保存数据，关闭后重新打开数据仍然保留。
+- 持久化存储：Vercel 生产环境使用 Vercel KV 保存数据，关闭后重新打开数据仍然保留。
 - 快速回顾：支持搜索、筛选、随机回顾、标记已回顾。
 - 个人优先：不包含登录、多用户、远程同步和权限控制。
 
@@ -23,18 +23,18 @@
 ### 后端
 
 - Node.js 22
-- Express
-- CORS
-- Node 内置 SQLite API
+- Vercel Serverless Functions
+- Vercel KV
 
 后端提供 REST 接口，负责卡片的增删改查和已回顾状态更新。
 
 ### 数据存储
 
-- SQLite 数据库文件：`server/data/cards.db`
+- Vercel KV：生产环境持久化存储
+- 本地开发回退文件：`.data/cards.json`
 - 迁移遗留文件：`server/data/cards.json`
 
-当前主存储是 SQLite，`cards.json` 仅用于早期迁移兼容。
+当前主存储是 Vercel KV，`cards.json` 用于首次迁移和本地回退。
 
 ## 功能说明
 
@@ -51,11 +51,15 @@
 ```text
 .
 ├─ index.html
+├─ api/
+│  ├─ health.js
+│  ├─ cards/
+│  │  ├─ index.js
+│  │  ├─ [id].js
+│  │  └─ [id]/review.js
+│  └─ _lib/
+│     └─ cards-store.js
 ├─ package.json
-├─ server/
-│  ├─ index.js
-│  └─ data/
-│     └─ cards.db
 ├─ src/
 │  ├─ App.tsx
 │  ├─ api.ts
@@ -63,6 +67,7 @@
 │  ├─ storage.ts
 │  ├─ styles.css
 │  └─ types.ts
+├─ vercel.json
 └─ README.md
 ```
 
@@ -77,10 +82,10 @@ npm install
 ### 2. 启动后端
 
 ```bash
-npm run server
+npm run dev
 ```
 
-默认监听地址：`http://localhost:3001`
+开发环境里，Vite 会同时提供前端和 `/api` 的本地模拟实现，方便直接调试。
 
 ### 3. 启动前端
 
@@ -96,31 +101,28 @@ npm run dev -- --host 0.0.0.0
 npm run build
 ```
 
-## Render 部署
+## Vercel 部署
 
-这个项目适合部署成一个 Render Web Service，由同一个 Node 服务同时提供 API 和前端静态资源。
+这个项目适合部署成一个 Vercel 项目，前端和 API 都在同一个平台上。
 
-### 方式一：使用仓库里的 `render.yaml`
+### 方式一：使用仓库直接导入 Vercel
 
-1. 在 Render 创建一个新的 Blueprint。
-2. 连接这个仓库。
-3. 使用根目录的 `render.yaml`。
-4. 部署后访问 Render 分配的站点地址。
+1. 在 Vercel 创建一个新项目。
+2. 导入这个仓库。
+3. 保持默认的框架识别，让 Vercel 构建 `dist` 静态前端并部署 `api/` 目录下的函数。
+4. 在同一个 Vercel 项目里添加 Vercel KV。
 
-这个配置会把 SQLite 数据库放到 Render 挂载的持久化盘里，路径是 `/var/data/cards.db`。
+### 方式二：补充环境变量
 
-### 方式二：在 Render 控制台手动创建 Web Service
-
-- Build Command: `npm install && npm run build`
-- Start Command: `npm start`
-- Environment: `NODE_VERSION=22`
-- Environment: `DB_FILE=/var/data/cards.db`
-- 挂载一个 Persistent Disk 到 `/var/data`
+- 如果你在本地调试，可以直接运行 `npm run dev`。
+- 生产环境需要在 Vercel 项目里绑定 Vercel KV，这样卡片数据才会持久化。
+- 如果不绑定 Vercel KV，应用会退回到本地 JSON 备份模式，适合开发，不适合生产。
 
 ### 说明
 
-- 前端默认会通过同源的 `/api` 请求访问后端，Render 上不需要单独配置 API 域名。
-- 本地开发时，Vite 会把 `/api` 代理到 `http://localhost:3001`。
+- 前端通过相对路径 `/api` 调用后端，所以部署到 Vercel 后不需要额外配置跨域。
+- 旧的 Express / SQLite 方案已经被 Serverless API 方案替换。
+- 本地开发时不需要单独启动后端进程。
 
 ## REST 接口
 
@@ -135,9 +137,9 @@ npm run build
 
 ## 数据持久化说明
 
-项目已经具备本地数据持久化能力。卡片数据会写入 SQLite 文件，重启后仍然保留。
+项目在 Vercel 上通过 KV 保存卡片数据，重启和重新部署后仍然保留。
 
-如果你想备份数据，直接复制 `server/data/cards.db` 即可。
+如果你想备份数据，可以从 Vercel KV 导出当前卡片列表；本地开发时也可以直接复制 `.data/cards.json`。
 
 ## 后续可扩展方向
 
